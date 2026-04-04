@@ -6,6 +6,8 @@ import { Participant } from '@/db/init';
 import ParticipantForm from '@/components/ParticipantForm';
 import ParticipantsTable from '@/components/ParticipantsTable';
 import QRCodeModal from '@/components/QRCodeModal';
+import QRScanner from '@/components/QRScanner';
+import ScanResultModal from '@/components/ScanResultModal';
 import { generateQRCodeBase64, getScanUrl } from '@/lib/qrcode';
 
 export default function DashboardPage() {
@@ -17,6 +19,8 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showQRModal, setShowQRModal] = useState(false);
   const [isGeneratingQR, setIsGeneratingQR] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [scannedParticipant, setScannedParticipant] = useState<Participant | null>(null);
 
   useEffect(() => {
     fetchParticipants();
@@ -125,6 +129,11 @@ export default function DashboardPage() {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleScanSuccess = (participant: Participant) => {
+    setScannedParticipant(participant);
+    setShowScanner(false);
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
@@ -171,6 +180,12 @@ export default function DashboardPage() {
             ➕ Add Participant
           </button>
           <button
+            onClick={() => setShowScanner(true)}
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition"
+          >
+            📱 Scan QR Code
+          </button>
+          <button
             onClick={handleGenerateAllQRCodes}
             disabled={participants.length === 0 || isGeneratingQR}
             className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition disabled:opacity-50"
@@ -180,7 +195,7 @@ export default function DashboardPage() {
           <button
             onClick={() => setShowQRModal(true)}
             disabled={participants.filter((p) => p.qr_code).length === 0}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition disabled:opacity-50"
+            className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-6 rounded-lg transition disabled:opacity-50"
           >
             👁️ View QR Codes
           </button>
@@ -256,6 +271,23 @@ export default function DashboardPage() {
         <QRCodeModal
           participants={participants}
           onClose={() => setShowQRModal(false)}
+        />
+      )}
+
+      {/* QR Scanner Modal */}
+      {showScanner && (
+        <QRScanner
+          onScan={handleScanSuccess}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
+
+      {/* Scan Result Modal */}
+      {scannedParticipant && (
+        <ScanResultModal
+          participant={scannedParticipant}
+          onClose={() => setScannedParticipant(null)}
+          onUpdate={fetchParticipants}
         />
       )}
     </main>
