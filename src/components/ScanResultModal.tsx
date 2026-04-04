@@ -70,7 +70,7 @@ export default function ScanResultModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-2xl max-w-sm w-full overflow-hidden animate-bounce">
+      <div className="bg-white rounded-lg shadow-2xl max-w-sm w-full">
         {/* Header */}
         <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-8 text-center">
           <div className="text-5xl mb-4">✅ Participant Found!</div>
