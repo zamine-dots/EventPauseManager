@@ -22,6 +22,8 @@ export default function ParticipantForm({
     food_order: participant?.food_order || '',
     coffee_order: participant?.coffee_order || '',
   });
+  const [foodTaken, setFoodTaken] = React.useState(participant?.food_taken || false);
+  const [coffeeTaken, setCoffeeTaken] = React.useState(participant?.coffee_taken || false);
   const [error, setError] = React.useState<string | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
 
@@ -44,8 +46,12 @@ export default function ParticipantForm({
     try {
       setIsSaving(true);
       if (participant?.id) {
-        // Update existing
-        await axios.put(`/api/participant/${participant.id}`, formData);
+        // Update existing with status
+        await axios.put(`/api/participant/${participant.id}`, {
+          ...formData,
+          food_taken: foodTaken,
+          coffee_taken: coffeeTaken,
+        });
       } else {
         // Create new
         await axios.post('/api/participant', formData);
@@ -109,6 +115,42 @@ export default function ParticipantForm({
             disabled={isLoading || isSaving}
           />
         </div>
+
+        {participant?.id && (
+          <>
+            <div className="space-y-3 pt-4 border-t-2 border-gray-200">
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Distribution Status
+              </label>
+              
+              <button
+                type="button"
+                onClick={() => setFoodTaken(!foodTaken)}
+                disabled={isLoading || isSaving}
+                className={`w-full px-4 py-3 rounded-lg font-bold transition ${
+                  foodTaken
+                    ? 'bg-green-500 hover:bg-green-600 text-white'
+                    : 'bg-red-500 hover:bg-red-600 text-white'
+                } disabled:opacity-50`}
+              >
+                {foodTaken ? '✅ Food Taken' : '❌ Food Pending'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCoffeeTaken(!coffeeTaken)}
+                disabled={isLoading || isSaving}
+                className={`w-full px-4 py-3 rounded-lg font-bold transition ${
+                  coffeeTaken
+                    ? 'bg-green-500 hover:bg-green-600 text-white'
+                    : 'bg-red-500 hover:bg-red-600 text-white'
+                } disabled:opacity-50`}
+              >
+                {coffeeTaken ? '✅ Coffee Taken' : '❌ Coffee Pending'}
+              </button>
+            </div>
+          </>
+        )}
 
         {error && (
           <div className="p-4 bg-red-50 border-2 border-red-400 rounded-lg">
