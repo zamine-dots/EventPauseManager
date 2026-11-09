@@ -2,12 +2,13 @@
 
 import React, { useState } from 'react';
 import axios from 'axios';
+import { getErrorMessage } from '@/lib/errors';
 import { Participant } from '@/db/init';
 
 interface ScanResultModalProps {
   participant: Participant | null;
   onClose: () => void;
-  onUpdate: () => void;
+  onUpdate: (participant: Participant) => void;
 }
 
 export default function ScanResultModal({
@@ -28,20 +29,15 @@ export default function ScanResultModal({
     try {
       setLoading(true);
       setFoodConfirming(true);
+      setError(null);
 
-      await axios.post(`/api/mark-food/${participant.id}`);
-      participant.food_taken = true;
-      onUpdate();
-
-      // Auto-close after 2 seconds
-      setTimeout(() => {
-        onClose();
-      }, 1500);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to mark food');
-      setFoodConfirming(false);
+      const response = await axios.post<{ participant: Participant }>(`/api/mark-food/${participant.id}`);
+      onUpdate(response.data.participant);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to mark food'));
     } finally {
       setLoading(false);
+      setFoodConfirming(false);
     }
   };
 
@@ -51,20 +47,15 @@ export default function ScanResultModal({
     try {
       setLoading(true);
       setCoffeeConfirming(true);
+      setError(null);
 
-      await axios.post(`/api/mark-coffee/${participant.id}`);
-      participant.coffee_taken = true;
-      onUpdate();
-
-      // Auto-close after 2 seconds
-      setTimeout(() => {
-        onClose();
-      }, 1500);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to mark coffee');
-      setCoffeeConfirming(false);
+      const response = await axios.post<{ participant: Participant }>(`/api/mark-coffee/${participant.id}`);
+      onUpdate(response.data.participant);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to mark coffee'));
     } finally {
       setLoading(false);
+      setCoffeeConfirming(false);
     }
   };
 
@@ -146,11 +137,11 @@ export default function ScanResultModal({
             </p>
             <div className="flex justify-around">
               <div className="text-center">
-                <div className={`text-4xl mb-2 ${participant.food_taken ? '✅' : '❌'}`}></div>
+                <div className="text-4xl mb-2">{participant.food_taken ? '✅' : '❌'}</div>
                 <p className="text-xs text-gray-600 font-semibold">Food</p>
               </div>
               <div className="text-center">
-                <div className={`text-4xl mb-2 ${participant.coffee_taken ? '✅' : '❌'}`}></div>
+                <div className="text-4xl mb-2">{participant.coffee_taken ? '✅' : '❌'}</div>
                 <p className="text-xs text-gray-600 font-semibold">Coffee</p>
               </div>
             </div>

@@ -30,7 +30,7 @@ export default function QRCodeModal({ participants, onClose }: QRCodeModalProps)
           {participantsWithQR.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-600 text-lg mb-4">No QR codes generated yet.</p>
-              <p className="text-gray-500">Generate QR codes using the "Generate All QR Codes" button.</p>
+              <p className="text-gray-500">Generate QR codes using the &quot;Generate All QR Codes&quot; button.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -44,7 +44,10 @@ export default function QRCodeModal({ participants, onClose }: QRCodeModalProps)
                   </h3>
                   {participant.qr_code && (
                     <div className="mb-4 p-2 bg-white border-2 border-gray-200 rounded">
-                      <img
+                      <Image
+                        width={192}
+                        height={192}
+                        unoptimized
                         src={participant.qr_code}
                         alt={`QR Code for ${participant.name}`}
                         className="w-48 h-48"

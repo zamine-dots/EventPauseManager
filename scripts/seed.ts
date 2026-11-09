@@ -1,5 +1,5 @@
-import { initializeDatabase, createParticipant } from '@/db/init';
-import { generateQRCodeBase64, getScanUrl } from '@/lib/qrcode';
+import { initializeDatabase, createParticipant, updateParticipant } from '@/db/init';
+import { generateQRCodeBase64 } from '@/lib/qrcode';
 
 // Example data
 const exampleParticipants = [
@@ -31,6 +31,7 @@ async function seedDatabase() {
       // Generate QR code
       const qrText = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/scan/${created.id}`;
       const qrCode = await generateQRCodeBase64(qrText);
+      updateParticipant(created.id, { qr_code: qrCode });
       
       console.log(`✅ Added: ${created.name}`);
     }

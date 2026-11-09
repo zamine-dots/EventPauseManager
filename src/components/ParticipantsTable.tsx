@@ -16,7 +16,6 @@ export default function ParticipantsTable({
   participants,
   onEdit,
   onDelete,
-  onRefresh,
   searchTerm,
 }: ParticipantsTableProps) {
   const [isDeleting, setIsDeleting] = React.useState<string | null>(null);
@@ -35,7 +34,7 @@ export default function ParticipantsTable({
       setIsDeleting(id);
       await axios.delete(`/api/participant/${id}`);
       onDelete(id);
-    } catch (error) {
+    } catch {
       alert('Failed to delete participant');
     } finally {
       setIsDeleting(null);

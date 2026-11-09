@@ -1,13 +1,15 @@
 import Database from 'better-sqlite3';
 import path from 'path';
+import { mkdirSync } from 'node:fs';
 import { v4 as uuidv4 } from 'uuid';
 
-const dbPath = path.join(process.cwd(), 'data', 'event.db');
+const dbPath = process.env.EVENT_DB_PATH || path.join(process.cwd(), 'data', 'event.db');
 
 let db: Database.Database | null = null;
 
 export function getDatabase() {
   if (!db) {
+    if (dbPath !== ':memory:') mkdirSync(path.dirname(dbPath), { recursive: true });
     db = new Database(dbPath);
     db.pragma('journal_mode = WAL');
     initializeDatabase();
@@ -54,11 +56,16 @@ export interface Participant {
   updated_at?: string;
 }
 
+type ParticipantRow = Omit<Participant, 'food_taken' | 'coffee_taken'> & {
+  food_taken: number;
+  coffee_taken: number;
+};
+
 // Participant operations
 export function getAllParticipants(): Participant[] {
   const db = getDatabase();
   const stmt = db.prepare('SELECT * FROM participants ORDER BY created_at DESC');
-  const rows = stmt.all() as any[];
+  const rows = stmt.all() as ParticipantRow[];
   return rows.map(row => ({
     ...row,
     food_taken: Boolean(row.food_taken),
@@ -69,7 +76,7 @@ export function getAllParticipants(): Participant[] {
 export function getParticipant(id: string): Participant | null {
   const db = getDatabase();
   const stmt = db.prepare('SELECT * FROM participants WHERE id = ?');
-  const row = stmt.get(id) as any;
+  const row = stmt.get(id) as ParticipantRow | undefined;
   if (!row) return null;
   return {
     ...row,
@@ -94,7 +101,7 @@ export function updateParticipant(id: string, data: Partial<Omit<Participant, 'i
   if (!current) return null;
 
   const updates: string[] = [];
-  const values: any[] = [];
+  const values: (string | number)[] = [];
 
   if (data.name !== undefined) {
     updates.push('name = ?');

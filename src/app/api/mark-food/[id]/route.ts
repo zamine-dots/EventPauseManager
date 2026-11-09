@@ -30,7 +30,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       { error: 'Failed to mark food as taken' },
       { status: 500 }
     );
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to mark food as taken' },
       { status: 500 }

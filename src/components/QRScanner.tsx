@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { Participant } from '@/db/init';
 import axios from 'axios';
+import { getErrorMessage } from '@/lib/errors';
 
 interface QRScannerProps {
   onScan: (participant: Participant) => void;
@@ -26,14 +27,14 @@ export default function QRScanner({ onScan, onClose }: QRScannerProps) {
         stream.getTracks().forEach(track => track.stop());
         setPermissionStatus('granted');
         setIsScanning(true);
-      } catch (err: any) {
-        if (err.name === 'NotAllowedError') {
+      } catch (err: unknown) {
+        if ((err instanceof Error ? err.name : '') === 'NotAllowedError') {
           setPermissionStatus('denied');
           setError('Camera permission denied. Please allow access to your camera.');
-        } else if (err.name === 'NotFoundError') {
+        } else if ((err instanceof Error ? err.name : '') === 'NotFoundError') {
           setError('No camera device found. Please check your device.');
         } else {
-          setError('Failed to access camera: ' + err.message);
+          setError(getErrorMessage(err, 'Failed to access camera'));
         }
         setIsScanning(false);
       }
@@ -96,9 +97,9 @@ export default function QRScanner({ onScan, onClose }: QRScannerProps) {
               const response = await axios.get(`/api/participant/${participantId}`);
               onScan(response.data);
             }
-          } catch (err: any) {
+          } catch (err: unknown) {
             console.error('Error processing QR code:', err);
-            setError(err.response?.data?.error || 'Participant not found!');
+            setError(getErrorMessage(err, 'Participant not found!'));
           }
         },
         (error) => {
@@ -108,14 +109,15 @@ export default function QRScanner({ onScan, onClose }: QRScannerProps) {
           }
         }
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Scanner initialization error:', err);
-      setError(err.message || 'Failed to initialize scanner');
+      setError(getErrorMessage(err, 'Failed to initialize scanner'));
       setIsScanning(false);
     }
     }, 0);
 
     return () => {
+      clearTimeout(timer);
       if (scannerRef.current && cleanupRef.current) {
         scannerRef.current.clear().catch(() => {});
       }
@@ -151,7 +153,7 @@ export default function QRScanner({ onScan, onClose }: QRScannerProps) {
         stream.getTracks().forEach(track => track.stop());
         setPermissionStatus('granted');
         setIsScanning(true);
-      } catch (err: any) {
+      } catch {
         setPermissionStatus('denied');
         setError('Camera permission denied.');
       }

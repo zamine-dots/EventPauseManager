@@ -3,6 +3,7 @@
 import React from 'react';
 import { Participant } from '@/db/init';
 import axios from 'axios';
+import { getErrorMessage } from '@/lib/errors';
 
 interface ParticipantFormProps {
   participant?: Participant | null;
@@ -57,8 +58,8 @@ export default function ParticipantForm({
         await axios.post('/api/participant', formData);
       }
       onSave();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to save participant');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to save participant'));
     } finally {
       setIsSaving(false);
     }

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { getErrorMessage } from '@/lib/errors';
 import { Participant } from '@/db/init';
 import ParticipantForm from '@/components/ParticipantForm';
 import ParticipantsTable from '@/components/ParticipantsTable';
@@ -22,21 +23,27 @@ export default function DashboardPage() {
   const [showScanner, setShowScanner] = useState(false);
   const [scannedParticipant, setScannedParticipant] = useState<Participant | null>(null);
 
-  useEffect(() => {
-    fetchParticipants();
-  }, []);
-
-  const fetchParticipants = async () => {
-    try {
-      setLoading(true);
+  const fetchParticipants = useCallback((signal?: AbortSignal) =>
+    axios.get<Participant[]>('/api/participants', { signal }).then((response) => {
+      if (signal?.aborted) return;
       setError(null);
-      const response = await axios.get('/api/participants');
       setParticipants(response.data);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to load participants');
-    } finally {
-      setLoading(false);
-    }
+    }, (err: unknown) => {
+      if (!signal?.aborted) setError(getErrorMessage(err, 'Failed to load participants'));
+    }).finally(() => {
+      if (!signal?.aborted) setLoading(false);
+    }), []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetchParticipants(controller.signal);
+    return () => controller.abort();
+  }, [fetchParticipants]);
+
+  const refreshParticipants = () => {
+    setLoading(true);
+    setError(null);
+    void fetchParticipants();
   };
 
   const handleAddParticipant = () => {
@@ -52,7 +59,7 @@ export default function DashboardPage() {
   const handleFormSave = () => {
     setShowForm(false);
     setEditingParticipant(null);
-    fetchParticipants();
+    refreshParticipants();
   };
 
   const handleFormCancel = () => {
@@ -83,8 +90,8 @@ export default function DashboardPage() {
       setParticipants(updatedParticipants);
       setShowQRModal(true);
       alert('QR codes generated successfully!');
-    } catch (err: any) {
-      alert(err.response?.data?.error || 'Failed to generate QR codes');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, 'Failed to generate QR codes'));
     } finally {
       setIsGeneratingQR(false);
     }
@@ -95,10 +102,10 @@ export default function DashboardPage() {
 
     try {
       await axios.post('/api/reset');
-      fetchParticipants();
+      refreshParticipants();
       alert('All statuses reset successfully!');
-    } catch (err: any) {
-      alert(err.response?.data?.error || 'Failed to reset statuses');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, 'Failed to reset statuses'));
     }
   };
 
@@ -257,7 +264,7 @@ export default function DashboardPage() {
                   participants={participants}
                   onEdit={handleEditParticipant}
                   onDelete={handleDeleteParticipant}
-                  onRefresh={fetchParticipants}
+                  onRefresh={refreshParticipants}
                   searchTerm={searchTerm}
                 />
               </>
@@ -287,7 +294,10 @@ export default function DashboardPage() {
         <ScanResultModal
           participant={scannedParticipant}
           onClose={() => setScannedParticipant(null)}
-          onUpdate={fetchParticipants}
+          onUpdate={(updated) => {
+            setScannedParticipant(updated);
+            setParticipants((current) => current.map((p) => p.id === updated.id ? updated : p));
+          }}
         />
       )}
     </main>

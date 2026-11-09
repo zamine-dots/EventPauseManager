@@ -1,21 +1,20 @@
 {
   "name": "pause-dej-caffe",
   "version": "1.0.0",
-  "description": "QR code-based food and coffee distribution management system for events",
+  "description": "A QR-based event distribution dashboard with a Next.js interface and SQLite storage.",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node scripts/check-database.mjs"
   },
   "dependencies": {
     "axios": "^1.14.0",
     "better-sqlite3": "^12.8.0",
-    "csv-parse": "^6.2.1",
-    "csv-stringify": "^6.7.0",
     "html5-qrcode": "^2.3.8",
-    "next": "16.2.2",
+    "next": "^16.4.5",
     "qrcode": "^1.5.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -29,8 +28,16 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.2",
+    "eslint-config-next": "^16.4.5",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": "24.x"
+  },
+  "overrides": {
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.1"
+    }
   }
 }

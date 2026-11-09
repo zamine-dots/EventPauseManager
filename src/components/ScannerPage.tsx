@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import Link from 'next/link';
 import axios from 'axios';
+import { getErrorMessage } from '@/lib/errors';
 import { Participant } from '@/db/init';
 
 interface ScannerPageProps {
@@ -17,23 +19,29 @@ export default function ScannerPage({ participantId }: ScannerPageProps) {
   const [disableFoodBtn, setDisableFoodBtn] = useState(false);
   const [disableCoffeeBtn, setDisableCoffeeBtn] = useState(false);
 
-  React.useEffect(() => {
-    fetchParticipant();
-  }, [participantId]);
-
-  const fetchParticipant = async () => {
-    try {
-      setLoading(true);
+  const fetchParticipant = useCallback((signal?: AbortSignal) =>
+    axios.get<Participant>(`/api/participant/${participantId}`, { signal }).then((response) => {
+      if (signal?.aborted) return;
       setError(null);
-      const response = await axios.get(`/api/participant/${participantId}`);
       setParticipant(response.data);
       setDisableFoodBtn(response.data.food_taken);
       setDisableCoffeeBtn(response.data.coffee_taken);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to load participant');
-    } finally {
-      setLoading(false);
-    }
+    }, (err: unknown) => {
+      if (!signal?.aborted) setError(getErrorMessage(err, 'Failed to load participant'));
+    }).finally(() => {
+      if (!signal?.aborted) setLoading(false);
+    }), [participantId]);
+
+  React.useEffect(() => {
+    const controller = new AbortController();
+    void fetchParticipant(controller.signal);
+    return () => controller.abort();
+  }, [fetchParticipant]);
+
+  const handleRetry = () => {
+    setLoading(true);
+    setError(null);
+    void fetchParticipant();
   };
 
   const handleMarkFood = async () => {
@@ -45,8 +53,8 @@ export default function ScannerPage({ participantId }: ScannerPageProps) {
       setParticipant(response.data.participant);
       setFoodSuccess(true);
       setTimeout(() => setFoodSuccess(false), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to mark food as taken');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to mark food as taken'));
       setDisableFoodBtn(false);
     }
   };
@@ -60,8 +68,8 @@ export default function ScannerPage({ participantId }: ScannerPageProps) {
       setParticipant(response.data.participant);
       setCoffeeSuccess(true);
       setTimeout(() => setCoffeeSuccess(false), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to mark coffee as taken');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to mark coffee as taken'));
       setDisableCoffeeBtn(false);
     }
   };
@@ -85,7 +93,7 @@ export default function ScannerPage({ participantId }: ScannerPageProps) {
           <h1 className="text-2xl font-bold text-red-600 mb-2">Error</h1>
           <p className="text-gray-600 mb-6">{error}</p>
           <button
-            onClick={fetchParticipant}
+            onClick={handleRetry}
             className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded"
           >
             Try Again
@@ -182,11 +190,11 @@ export default function ScannerPage({ participantId }: ScannerPageProps) {
           <p className="text-sm text-gray-500 mb-3 text-center font-semibold">Status</p>
           <div className="flex justify-center gap-6">
             <div className="text-center">
-              <div className={`text-4xl mb-2 ${participant.food_taken ? '✅' : '❌'}`}></div>
+              <div className="text-4xl mb-2">{participant.food_taken ? '✅' : '❌'}</div>
               <p className="text-xs text-gray-600">Food</p>
             </div>
             <div className="text-center">
-              <div className={`text-4xl mb-2 ${participant.coffee_taken ? '✅' : '❌'}`}></div>
+              <div className="text-4xl mb-2">{participant.coffee_taken ? '✅' : '❌'}</div>
               <p className="text-xs text-gray-600">Coffee</p>
             </div>
           </div>
@@ -194,12 +202,12 @@ export default function ScannerPage({ participantId }: ScannerPageProps) {
 
         {/* Back Button */}
         <div className="mt-8">
-          <a
+          <Link
             href="/"
             className="block w-full text-center py-2 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition"
           >
             ← Back to Dashboard
-          </a>
+          </Link>
         </div>
       </div>
     </div>

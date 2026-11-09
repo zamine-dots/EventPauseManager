@@ -8,5 +8,5 @@ interface ScanPageProps {
 
 export default async function Page({ params }: ScanPageProps) {
   const { id } = await params;
-  return <ScannerPage participantId={id} />;
+  return <ScannerPage key={id} participantId={id} />;
 }
